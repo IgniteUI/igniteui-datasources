@@ -88,6 +88,10 @@ export class ODataSchemaProvider {
 						valueTypes.push(DataSourceSchemaPropertyType.StringValue);
 					} else if (property.type == "Edm.Int16" || property.type == "Edm.Int32") {
 						valueTypes.push(DataSourceSchemaPropertyType.IntValue);
+					} else if (property.type == "Edm.Double") {
+						valueTypes.push(DataSourceSchemaPropertyType.DoubleValue);
+					} else if (property.type == "Edm.Single") {
+						valueTypes.push(DataSourceSchemaPropertyType.SingleValue);
 					} else if (property.type == "Edm.Boolean") {
 						valueTypes.push(DataSourceSchemaPropertyType.BooleanValue);
 					} else if (property.type == "Edm.Byte") {

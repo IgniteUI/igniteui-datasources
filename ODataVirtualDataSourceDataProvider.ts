@@ -19,6 +19,8 @@ import { AsyncVirtualDataSourceDataProviderWorkerSettings } from "igniteui-core/
 import { DataSourceDataProviderSchemaChangedEventArgs } from "igniteui-core/DataSourceDataProviderSchemaChangedEventArgs";
 import { DataSourceSchemaPropertyType } from "igniteui-core/DataSourceSchemaPropertyType";
 import { stringContains } from "igniteui-core/string";
+import { SummaryDescriptionCollection } from 'igniteui-core/SummaryDescriptionCollection';
+import { DataSourceSummaryScope } from 'igniteui-core/DataSourceSummaryScope';
 
 export class ODataVirtualDataSourceDataProvider extends Base implements IDataSourceVirtualDataProvider {
 	static $t: Type = markType(ODataVirtualDataSourceDataProvider, 'ODataVirtualDataSourceDataProvider', (<any>Base).$type, [IDataSourceVirtualDataProvider_$type]);
@@ -33,6 +35,8 @@ export class ODataVirtualDataSourceDataProvider extends Base implements IDataSou
 		this._groupDescriptions.onChanged = () => this.groupDescriptions_CollectionChanged(null, null);
 		this._filterExpressions = new FilterExpressionCollection();
 		this._filterExpressions.onChanged = () => this.filterExpressions_CollectionChanged(null, null);
+		this._summaryDescriptions = new SummaryDescriptionCollection();
+		this._summaryDescriptions.onChanged = () => this.summaryDescriptions_CollectionChanged(null, null);
 	}
 	private filterExpressions_CollectionChanged(sender: any, e: NotifyCollectionChangedEventArgs): void {
 		this.queueAutoRefresh();
@@ -41,6 +45,9 @@ export class ODataVirtualDataSourceDataProvider extends Base implements IDataSou
 		this.queueAutoRefresh();
 	}
 	private groupDescriptions_CollectionChanged(sender: any, e: NotifyCollectionChangedEventArgs): void {
+		this.queueAutoRefresh();
+	}
+	private summaryDescriptions_CollectionChanged(sender: any, e: NotifyCollectionChangedEventArgs): void {
 		this.queueAutoRefresh();
 	}
 	addPageRequest(pageIndex: number, priority: DataSourcePageRequestPriority): void {
@@ -89,6 +96,10 @@ export class ODataVirtualDataSourceDataProvider extends Base implements IDataSou
 			$ret.groupDescriptions = this._groupDescriptions;
 			$ret.filterExpressions = this._filterExpressions;
 			$ret.propertiesRequested = this._propertiesRequested;
+			$ret.summaryDescriptions = this._summaryDescriptions;
+			$ret.summaryScope = this._summaryScope;
+			$ret.enableJsonp = this._enableJsonp;
+			$ret.isAggregationSupported = this.isAggregationSupported;
 			return $ret;
 		})());
 	}
@@ -245,11 +256,19 @@ export class ODataVirtualDataSourceDataProvider extends Base implements IDataSou
 		return true;
 	}
 	get isGroupingSupported(): boolean {
-		return true;
+		return this.isAggregationSupported;
 	}
 	get isFilteringSupported(): boolean {
 		return true;
 	}
+	private _isAggregationSupported: boolean;
+	get isAggregationSupported(): boolean {
+		return this._isAggregationSupported;
+	}
+	set isAggregationSupported(isSupported: boolean) {
+		this._isAggregationSupported = isSupported;
+	}
+
 	private _sortDescriptions: SortDescriptionCollection = null;
 	get sortDescriptions(): SortDescriptionCollection {
 		return this._sortDescriptions;
@@ -270,6 +289,25 @@ export class ODataVirtualDataSourceDataProvider extends Base implements IDataSou
 	get filterExpressions(): FilterExpressionCollection {
 		return this._filterExpressions;
 	}
+	private _summaryDescriptions: SummaryDescriptionCollection = null;
+	get summaryDescriptions(): SummaryDescriptionCollection {
+		return this._summaryDescriptions;
+	}
+	private _summaryScope: DataSourceSummaryScope;
+	get summaryScope(): DataSourceSummaryScope {
+		return this._summaryScope;
+	}
+	set summaryScope(value: DataSourceSummaryScope) {
+		this._summaryScope = value;
+	}
+	private _enableJsonp: boolean = true;
+	get enableJsonp(): boolean {
+		return this._enableJsonp;
+	}
+	set enableJsonp(isEnabled: boolean) {
+		this._enableJsonp = isEnabled;
+	}
+	
 	get notifyUsingSourceIndexes(): boolean {
 		return true;
 	}

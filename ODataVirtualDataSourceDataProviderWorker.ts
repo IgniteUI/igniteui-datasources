@@ -22,6 +22,11 @@ import { ODataDataSourceFilterExpressionVisitor } from "igniteui-core/ODataDataS
 import { FilterExpressionVisitor } from "igniteui-core/FilterExpressionVisitor";
 import { ListSortDirection } from "igniteui-core/ListSortDirection";
 import { stringIsNullOrEmpty } from "igniteui-core/string";
+import { SummaryDescriptionCollection } from 'igniteui-core/SummaryDescriptionCollection';
+import { SummaryOperand } from 'igniteui-core/SummaryOperand';
+import { DataSourceSummaryScope } from 'igniteui-core/DataSourceSummaryScope';
+import { ISummaryResult } from 'igniteui-core/ISummaryResult';
+import { DefaultSummaryResult } from 'igniteui-core/DefaultSummaryResult';
 
 declare let odatajs: any;
 
@@ -29,8 +34,13 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 	private _baseUri: string = null;
 	private _entitySet: string = null;
 	private _sortDescriptions: SortDescriptionCollection = null;
+	private _groupDescriptions: SortDescriptionCollection = null;
 	private _filterExpressions: FilterExpressionCollection = null;
+	private _summaryDescriptions: SummaryDescriptionCollection = null;
+	private _summaryScope: DataSourceSummaryScope;	
 	private _desiredPropeties: string[] = null;
+	private _enableJsonp: boolean = true;
+	private _isAggregationSupported: boolean = false;
 	protected get sortDescriptions(): SortDescriptionCollection {
 		return this._sortDescriptions;
 	}
@@ -67,6 +77,11 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 			yield coll.get(i);
 		}
 	}
+	private *iterSummaries(summaries: SummaryDescriptionCollection) {
+		for (let i = 0; i < summaries.size(); i++) {
+			yield summaries.get(i);
+		}
+	}
 
 	constructor(settings: ODataVirtualDataSourceDataProviderWorkerSettings) {
 		super(settings);
@@ -86,6 +101,10 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 		}
 		this._filterExpressions = settings.filterExpressions;
 		this._desiredPropeties = settings.propertiesRequested;
+		this._summaryDescriptions = settings.summaryDescriptions;
+		this._summaryScope = settings.summaryScope;
+		this._enableJsonp = settings.enableJsonp;
+		this._isAggregationSupported = settings.isAggregationSupported;
 		window.setTimeout(this.doWork, 100);
 	}
 	protected processCompletedTask(completedTask: AsyncDataSourcePageTaskHolder, currentDelay: number, pageIndex: number, taskDataHolder: AsyncVirtualDataSourceProviderTaskDataHolder): void {
@@ -117,42 +136,73 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 		}
 		schema = this.actualSchema;
 		if (schema == null) {
-			if (this._groupDescriptions.size() > 0) {
-				this.resolveSchema((s: IDataSourceSchema) => this.resolveGroupInformation((g: ISectionInformation[]) => this.finishProcessingCompletedTask(task, pageIndex, s, result), () => {
-					this.retryIndex(pageIndex, currentDelay);
-					return;
-				}), () => {
-					this.retryIndex(pageIndex, currentDelay);
-					return;
-				});
-			} else {
-				this.resolveSchema((s: IDataSourceSchema) => this.finishProcessingCompletedTask(task, pageIndex, s, result), () => {
-					this.retryIndex(pageIndex, currentDelay);
-					return;
-				});
-			}
+			let requests = 0;
+			this.resolveSchema((s: IDataSourceSchema) => {
+				// resolveSchema success callback
+				this.actualSchema = s;
+
+				if (this._isAggregationSupported && (this._groupDescriptions.size() !== 0 || this._summaryDescriptions.size() !== 0)) {
+					if (this._groupDescriptions.size() > 0) {
+						requests++;
+						this.resolveGroupInformation((g: ISectionInformation[]) => {
+							// group info success
+							requests--;
+							if (requests === 0) {
+								this.finishProcessingCompletedTask(task, pageIndex, s, result);
+							}
+						}, () => {
+							// group info failure
+							this.retryIndex(pageIndex, currentDelay);
+							return;
+						});
+					}
+					if (this._summaryDescriptions.size() > 0) {
+						requests++;
+						this.resolveSummaryInformation((g: ISummaryResult[]) => {
+							// summary info success
+							requests--;
+							if (requests === 0) {
+								this.finishProcessingCompletedTask(task, pageIndex, s, result);
+							}
+						}, () => {
+							// summary info failure
+							this.retryIndex(pageIndex, currentDelay);
+							return;
+						})
+					}
+				} else {
+					this.finishProcessingCompletedTask(task, pageIndex, s, result);
+				}
+			}, () => {
+				// resolveSchema failure callback
+				this.retryIndex(pageIndex, currentDelay);
+				return;
+			});
 			return;
 		}
 		this.finishProcessingCompletedTask(task, pageIndex, schema, result);
 	}
 	private _groupInformation: ISectionInformation[] = null;
+	private _summaryInformation: ISummaryResult[] = null;
 	private finishProcessingCompletedTask(task: AsyncVirtualDataTask, pageIndex: number, schema: IDataSourceSchema, result: any): void {
 		let executionContext: IDataSourceExecutionContext;
 		let pageLoaded: (page: IDataSourcePage, currentFullCount: number, actualPageSize: number) => void;
 		let groupInformation: ISectionInformation[];
+		let summaryInformation: ISummaryResult[];
 		this.actualSchema = schema;
 		executionContext = this.executionContext;
 		groupInformation = this._groupInformation;
+		summaryInformation = this._summaryInformation;
 		pageLoaded = this.pageLoaded;
 		let page: ODataDataSourcePage = null;
 		if (result != null) {
-			page = new ODataDataSourcePage(result, schema, groupInformation, pageIndex);
+			page = new ODataDataSourcePage(result, schema, groupInformation, summaryInformation, pageIndex);
 			if (!this.isLastPage(pageIndex) && page.count() > 0 && !this.populatedActualPageSize) {
 				this.populatedActualPageSize = true;
 				this.actualPageSize = page.count();
 			}
 		} else {
-			page = new ODataDataSourcePage(null, schema, groupInformation, pageIndex);
+			page = new ODataDataSourcePage(null, schema, groupInformation, summaryInformation, pageIndex);
 		}
 		if (this.pageLoaded != null) {
 			if (this.executionContext != null) {
@@ -175,70 +225,66 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 			finishAction(this._groupInformation);
 			return;
 		}
-		let orderBy: string = null;
-		let groupBy: string = null;
+		let orderBy: string = "";
+		let groupBy: string = "";
 		let filter: string = null;
+		let summary: string = "";
 		if (this._groupDescriptions == null || this._groupDescriptions.size() == 0) {
 			finishAction(null);
 			return;
 		}
 		filter = this._filterString;
 		this.updateFilterString();
-		let sb: string = "";
-		if (this.sortDescriptions != null) {
-			let first: boolean = true;
-			for (let sort of this.iter(this.sortDescriptions)) {
-				if (first) {
-					first = false;
-				} else {
-					sb += ", ";
-				}
-				if (sort.direction == ListSortDirection.Descending) {
-					sb += " desc";
-				} else {
-					sb +=  " asc";
-				}
-			}
-		}
-		orderBy = sb.toString();
-		let gsb: string = "";
+		
 		if (this._groupDescriptions != null) {
 			let first1: boolean = true;
 			for (let group of this.iter(this._groupDescriptions)) {
 				if (first1) {
 					first1 = false;
 				} else {
-					sb += ", ";
+					orderBy += ", ";
+					groupBy += ", ";
 				}
-				gsb += group.propertyName;
+
+				groupBy += group.propertyName;
+
+				if (group.direction === ListSortDirection.Descending) {
+					orderBy += group.propertyName + " desc";
+				} else {
+					orderBy += group.propertyName + " asc";
+				}
 			}
 		}
-		groupBy = gsb.toString();
+
+		if (this._summaryScope === DataSourceSummaryScope.Both || this._summaryScope === DataSourceSummaryScope.Sections) {
+			let summaryParameters = this.getSummaryQueryParameters(true);
+			if (!stringIsNullOrEmpty(summaryParameters)) {
+				summary = ", " + summaryParameters;
+			}
+		}
+
 		let commandText = this._entitySet + "?$orderby=" + orderBy + "&$apply=";
 		if (!stringIsNullOrEmpty(filter)) {
 			commandText += "filter(" + filter + ")/";
 		}
-		commandText += "groupby((" + groupBy + "), aggregate($count as $__count))";
+		commandText += "groupby((" + groupBy + "), aggregate($count as $__count" + summary + "))";
 		try {
 			let groupInformation: ISectionInformation[] = [];
 			let success_: (arg1: any, arg2: any) => void = (data: any, response: any) => this.groupSuccess(data, response, finishAction, failureAction, groupInformation);
 			let failure_: (arg1: any) => void = (err: any) => this.groupError(err, finishAction, failureAction, groupInformation);
 			let run_: () => void = null;
 			
-					var headers = { 'Content - Type': 'application / json', Accept: 'application / json' };
-					var request = {
-						requestUri: commandText,
-						enableJsonpCallback: true,
-						method: 'GET',
-						headers: headers,
-						data: null
-					};
-					run_ = function () { odatajs.oData.request(
-						request,
-						success_,
-						failure_
-					) };
-				    ;
+			var headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
+			var request = {
+				requestUri: this._baseUri + "/" + commandText,
+				enableJsonpCallback: this._enableJsonp,
+				method: 'GET',
+				headers: headers,
+				data: null
+			};
+			run_ = function () {
+				odatajs.oData.request(request, success_, failure_);
+			};
 			run_();
 		}
 		catch (e) {
@@ -254,23 +300,167 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 			groupNames.push(group.propertyName);
 		}
 		let groupNamesArray = groupNames;
-		console.log(<string>data);
-		this._groupInformation = null;
-		finishAction(null);
+
+		if (data && data.value && data.value.length > 0) {
+			let currentIndex = 0;
+			for (let i = 0; i < data.value.length; i++) {
+				this.addGroup(groupInformation, groupNames, groupNames, currentIndex, data.value[i]);
+			}
+		}
+		this._groupInformation = groupInformation;
+		finishAction(this._groupInformation);
 	}
-	private static addGroup(groupInformation: ISectionInformation[], groupNames: string[], groupNamesArray: string[], currentIndex: number, group: Map<string, any>): void {
+	private addGroup(groupInformation: ISectionInformation[], groupNames: string[], groupNamesArray: string[], currentIndex: number, group: any): void {
 		let groupValues: any[] = [];
 		for (let name of groupNames) {
-			if (group.has(name)) {
-				groupValues.push(group.get(name));
+			if (group[name]) {
+				groupValues.push(group[name]);
 			}
 		}
 		let groupCount = 0;
-		if (group.has("$__count")) {
-			groupCount = Convert.toInt321(group.get("$__count"));
+		if (group["$__count"]) {
+			groupCount = Convert.toInt321(group["$__count"]);
 		}
-		let groupInfo: DefaultSectionInformation = new DefaultSectionInformation(currentIndex, currentIndex + (groupCount - 1), groupNamesArray, groupValues);
+
+		let summaryResults: ISummaryResult[] = null;
+		if (this._summaryScope == DataSourceSummaryScope.Both || this._summaryScope == DataSourceSummaryScope.Sections) {
+			summaryResults = this.createSummaryResults(group);
+		}
+
+		let groupInfo: DefaultSectionInformation = new DefaultSectionInformation(currentIndex, currentIndex + (groupCount - 1), groupNamesArray, groupValues, summaryResults);
 		groupInformation.push(groupInfo);
+	}
+	private resolveSummaryInformation(finishAction: (arg1: ISummaryResult[]) => void, failureAction: () => void): void {
+		if (this._summaryInformation != null) {
+			finishAction(this._summaryInformation);
+			return;
+		}
+		let filter: string = null;
+		let summary: string = null;
+
+		if (this._summaryDescriptions == null ||
+			this._summaryDescriptions.size() == 0 ||
+			this._summaryScope == DataSourceSummaryScope.Sections ||
+			this._summaryScope == DataSourceSummaryScope.None) {
+			finishAction(null);
+			return;
+		}
+
+		filter = this._filterString;
+		this.updateFilterString();
+		
+		summary = this.getSummaryQueryParameters(false);
+		
+		let commandText = this._entitySet + "?$apply=";
+		if (!stringIsNullOrEmpty(filter)) {
+			commandText += "filter(" + filter + ")/";
+		}
+		commandText += "aggregate(" + summary + ")";
+		try {
+			let summaryInformation: ISummaryResult[] = [];
+			let success_: (arg1: any, arg2: any) => void = (data: any, response: any) => this.summarySuccess(data, response, finishAction, failureAction, summaryInformation);
+			let failure_: (arg1: any) => void = (err: any) => this.summaryError(err, finishAction, failureAction, summaryInformation);
+			let run_: () => void = null;
+			
+			var headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
+			var request = {
+				requestUri: this._baseUri + "/" + commandText,
+				enableJsonpCallback: this._enableJsonp,
+				method: 'GET',
+				headers: headers,
+				data: null
+			};
+			run_ = function () {
+				odatajs.oData.request(request, success_, failure_);
+			};
+			run_();
+		}
+		catch (e) {
+			failureAction();
+		}
+	}
+	private summarySuccess(data: any, response: any, finishAction: (arg1: ISummaryResult[]) => void, failureAction: () => void, summaryInformation: ISummaryResult[]): void {
+		if (data && data.value && data.value.length > 0) {
+			summaryInformation = this.createSummaryResults(data.value[0]);
+		}
+
+		this._summaryInformation = summaryInformation;
+		finishAction(this._summaryInformation);
+	}
+	private summaryError(err: any, finishAction: (arg1: ISummaryResult[]) => void, failureAction: () => void, summaryInformation: ISummaryResult[]): void {
+		this._summaryInformation = null;
+	}
+	private getSummaryQueryParameters(ignoreCount: boolean): string {
+		let result = "";
+		if (this._summaryDescriptions != null) {
+			let first = true;
+			let countExists = false;
+			for (let summary of this.iterSummaries(this._summaryDescriptions)) {
+				if (summary.operand == SummaryOperand.Count && (ignoreCount || countExists)) {
+					continue;
+				}
+
+				if (!first) {
+					result += ", ";
+				}
+
+				switch (summary.operand) {
+					case SummaryOperand.Average:
+						result += summary.propertyName + " with average as " + summary.propertyName + "Average";
+						break;
+					case SummaryOperand.Min:
+						result += summary.propertyName + " with min as " + summary.propertyName + "Min";
+						break;
+					case SummaryOperand.Max:
+						result += summary.propertyName + " with max as " + summary.propertyName + "Max";
+						break;
+					case SummaryOperand.Sum:
+						result += summary.propertyName + " with sum as " + summary.propertyName + "Sum";
+						break;
+					case SummaryOperand.Count:
+						result += "$count as $__count";
+						countExists = true;
+						break;
+				}
+
+				first = false;
+			}
+		}
+		return result;
+	}
+	private createSummaryResults(data: any): ISummaryResult[] {
+		let summaryResults: ISummaryResult[] = [];
+		
+		for (let summary of this.iterSummaries(this._summaryDescriptions)) {
+			let summaryName = summary.propertyName;
+			switch (summary.operand) {
+				case SummaryOperand.Average:
+					summaryName += "Average";
+					break;
+				case SummaryOperand.Min:
+					summaryName += "Min";
+					break;
+				case SummaryOperand.Max:
+					summaryName += "Max";
+					break;
+				case SummaryOperand.Sum:
+					summaryName += "Sum";
+					break;
+				case SummaryOperand.Count:
+					summaryName = "$__count";
+					break;
+			}
+
+			let summaryValue = null;
+			if (data && data[summaryName]) {
+				summaryValue = data[summaryName];
+			}
+
+			let summaryResult = new DefaultSummaryResult(summary.propertyName, summary.operand, summaryValue);
+			summaryResults.push(summaryResult);
+		}
+
+		return summaryResults;
 	}
 	private resolveSchema(finishAction: (arg1: IDataSourceSchema) => void, failureAction: () => void): void {
 		let success_: (arg1: string) => void = (res: string) => {
@@ -297,7 +487,6 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 	private _filterString: string = null;
 	private _selectedString: string = null;
 	static readonly schemaRequestIndex: number = -1;
-	private _groupDescriptions: SortDescriptionCollection = null;
 	protected makeTaskForRequest(request: AsyncDataSourcePageRequest, retryDelay: number): void {
 		let actualPageSize: number = 0;
 		let sortDescriptions: SortDescriptionCollection = null;
@@ -406,20 +595,19 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 		let failure_: (arg1: any) => void = (err: any) => this.error(task, err);
 		let run_: () => void = null;
 		
-					var headers = { 'Content - Type': 'application / json', Accept: 'application / json' };
-					var request = {
-						requestUri: requestUrl_,
-						enableJsonpCallback: true,
-						method: 'GET',
-						headers: headers,
-						data: null
-					};
-					run_ = function () { odatajs.oData.request(
-						request,
-						success_,
-						failure_
-					) };
-				;
+		var headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
+		var request = {
+			requestUri: requestUrl_,
+			enableJsonpCallback: this._enableJsonp,
+			method: 'GET',
+			headers: headers,
+			data: null
+		};
+		run_ = function () { odatajs.oData.request(
+			request,
+			success_,
+			failure_
+		)};
 		task.run = run_;
 	}
 	private success(t: AsyncVirtualDataTask, data: any, response: any): void {
