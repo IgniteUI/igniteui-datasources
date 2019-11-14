@@ -2,6 +2,8 @@ import { AsyncVirtualDataSourceDataProviderWorkerSettings } from "igniteui-core/
 import { SortDescriptionCollection } from "igniteui-core/SortDescriptionCollection";
 import { FilterExpressionCollection } from "igniteui-core/FilterExpressionCollection";
 import { Base, Type, markType } from "igniteui-core/type";
+import { SummaryDescriptionCollection } from 'igniteui-core/SummaryDescriptionCollection';
+import { DataSourceSummaryScope } from 'igniteui-core/DataSourceSummaryScope';
 
 export class ODataVirtualDataSourceDataProviderWorkerSettings extends AsyncVirtualDataSourceDataProviderWorkerSettings {
 	static $t: Type = markType(ODataVirtualDataSourceDataProviderWorkerSettings, 'ODataVirtualDataSourceDataProviderWorkerSettings', (<any>AsyncVirtualDataSourceDataProviderWorkerSettings).$type);
@@ -46,6 +48,38 @@ export class ODataVirtualDataSourceDataProviderWorkerSettings extends AsyncVirtu
 	}
 	set groupDescriptions(value: SortDescriptionCollection) {
 		this._groupDescriptions = value;
+	}
+
+	private _summaryDescriptions: SummaryDescriptionCollection = null;
+	get summaryDescriptions(): SummaryDescriptionCollection {
+		return this._summaryDescriptions;
+	}
+	set summaryDescriptions(value: SummaryDescriptionCollection) {
+		this._summaryDescriptions = value;
+	}
+
+	private _summaryscope: DataSourceSummaryScope;
+	get summaryScope(): DataSourceSummaryScope {
+		return this._summaryscope;
+	}
+	set summaryScope(value: DataSourceSummaryScope) {
+		this._summaryscope = value;
+	}
+
+	private _enableJsonp: boolean;
+	get enableJsonp(): boolean {
+		return this._enableJsonp;
+	}
+	set enableJsonp(isEnabled: boolean) {
+		this._enableJsonp = isEnabled;
+	}
+
+	private _isAggregationSupported: boolean;
+	get isAggregationSupported(): boolean {
+		return this._isAggregationSupported;
+	}
+	set isAggregationSupported(isSupported: boolean) {
+		this._isAggregationSupported = isSupported;
 	}
 }
 

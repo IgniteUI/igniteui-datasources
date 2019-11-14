@@ -1,14 +1,16 @@
 import { IDataSourcePage, IDataSourcePage_$type } from "igniteui-core/IDataSourcePage";
 import { IDataSourceSchema } from "igniteui-core/IDataSourceSchema";
 import { ISectionInformation } from "igniteui-core/ISectionInformation";
-import { DataSourceSchemaPropertyType } from "igniteui-core/DataSourceSchemaPropertyType";
+import { ISummaryResult } from "igniteui-core/ISummaryResult";
+import { DataSourceSchemaPropertyType } from "igniteui-core/DataSourceSchemaPropertyType"
 
 export class ODataDataSourcePage implements IDataSourcePage {
 	private _actualData: Map<string, any>[] = null;
 	private _schema: IDataSourceSchema = null;
 	private _pageIndex: number = 0;
 	private _groupInformation: ISectionInformation[] = null;
-	constructor(sourceData_: any, schema: IDataSourceSchema, groupInformation: ISectionInformation[], pageIndex: number) {
+	private _summaryInformation: ISummaryResult[] = null;
+	constructor(sourceData_: any, schema: IDataSourceSchema, groupInformation: ISectionInformation[], summaryInformation: ISummaryResult[], pageIndex: number) {
 		if (sourceData_ == null) {
 			this._actualData = null;
 		} else {
@@ -38,6 +40,7 @@ export class ODataDataSourcePage implements IDataSourcePage {
 		}
 		this._schema = schema;
 		this._groupInformation = groupInformation;
+		this._summaryInformation = summaryInformation;
 		this._pageIndex = pageIndex;
 	}
 	count(): number {
@@ -61,6 +64,9 @@ export class ODataDataSourcePage implements IDataSourcePage {
 	}
 	getGroupInformation(): ISectionInformation[] {
 		return this._groupInformation;
+	}
+	getSummaryInformation(): ISummaryResult[] {
+		return this._summaryInformation;
 	}
 }
 

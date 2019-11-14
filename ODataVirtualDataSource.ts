@@ -2,15 +2,20 @@ import { VirtualDataSource } from "igniteui-core/VirtualDataSource";
 import { ODataVirtualDataSourceDataProvider } from "./ODataVirtualDataSourceDataProvider";
 import { BaseDataSource } from "igniteui-core/BaseDataSource";
 import { Base, typeCast, Type, markType } from "igniteui-core/type";
+import { IExternalDataSource } from 'igniteui-core/IExternalDataSource';
 
-export class ODataVirtualDataSource extends VirtualDataSource {
+export class ODataVirtualDataSource extends VirtualDataSource implements IExternalDataSource {
 	constructor() {
 		super();
 		this.dataProvider = ((() => {
 			let $ret = new ODataVirtualDataSourceDataProvider();
 			$ret.executionContext = this.executionContext;
+			$ret.enableJsonp = this.enableJsonp;
+			$ret.isAggregationSupported = this.isGroupingSupported;
 			return $ret;
 		})());
+
+		this.externalDataSource = this;
 	}
 	private onBaseUriChanged(oldValue: string, newValue: string): void {
 		if (typeCast<ODataVirtualDataSourceDataProvider>((<any>ODataVirtualDataSourceDataProvider).$type, this.actualDataProvider) !== null) {
@@ -60,6 +65,38 @@ export class ODataVirtualDataSource extends VirtualDataSource {
 		this._timeoutMilliseconds = value;
 		if (oldValue != this._timeoutMilliseconds) {
 			this.onTimeoutMillisecondsChanged(oldValue, this._timeoutMilliseconds);
+		}
+	}
+
+	get isSortingSupportedOverride(): boolean {
+		return true;
+	}
+	get isFilteringSupportedOverride(): boolean {
+		return true;
+	}
+	get isGroupingSupportedOverride(): boolean {
+		return this.isAggregationSupportedByServer;
+	}
+
+	private _isAggregationSupportedByServer: boolean = false;
+	get isAggregationSupportedByServer(): boolean {
+		return this._isAggregationSupportedByServer;
+	}
+	set isAggregationSupportedByServer(isSupported: boolean) {
+		this._isAggregationSupportedByServer = isSupported;
+		if (typeCast<ODataVirtualDataSourceDataProvider>((<any>ODataVirtualDataSourceDataProvider).$type, this.actualDataProvider) !== null) {
+			(<ODataVirtualDataSourceDataProvider>this.actualDataProvider).isAggregationSupported = isSupported;
+		}
+	}
+
+	private _enableJsonp: boolean = true;
+	get enableJsonp(): boolean {
+		return this._enableJsonp;
+	}
+	set enableJsonp(isEnabled: boolean) {
+		this._enableJsonp = isEnabled;
+		if (typeCast<ODataVirtualDataSourceDataProvider>((<any>ODataVirtualDataSourceDataProvider).$type, this.actualDataProvider) !== null) {
+			(<ODataVirtualDataSourceDataProvider>this.actualDataProvider).enableJsonp = isEnabled;
 		}
 	}
 }
