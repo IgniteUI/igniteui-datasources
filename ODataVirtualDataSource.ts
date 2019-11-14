@@ -4,7 +4,7 @@ import { BaseDataSource } from "igniteui-core/BaseDataSource";
 import { Base, typeCast, Type, markType } from "igniteui-core/type";
 import { IExternalDataSource } from 'igniteui-core/IExternalDataSource';
 
-export class ODataVirtualDataSource extends VirtualDataSource implements IExternalDataSource {
+export class ODataVirtualDataSource extends VirtualDataSource {
 	constructor() {
 		super();
 		this.dataProvider = ((() => {
@@ -14,8 +14,6 @@ export class ODataVirtualDataSource extends VirtualDataSource implements IExtern
 			$ret.isAggregationSupported = this.isGroupingSupported;
 			return $ret;
 		})());
-
-		this.externalDataSource = this;
 	}
 	private onBaseUriChanged(oldValue: string, newValue: string): void {
 		if (typeCast<ODataVirtualDataSourceDataProvider>((<any>ODataVirtualDataSourceDataProvider).$type, this.actualDataProvider) !== null) {
