@@ -1,5 +1,6 @@
 import { VirtualDataSource } from "igniteui-core/VirtualDataSource";
 import { ODataVirtualDataSourceDataProvider } from "./ODataVirtualDataSourceDataProvider";
+import { IDataSource } from "igniteui-core/IDataSource";
 import { BaseDataSource } from "igniteui-core/BaseDataSource";
 import { Base, typeCast, Type, markType } from "igniteui-core/type";
 import { IExternalDataSource } from 'igniteui-core/IExternalDataSource';
@@ -96,6 +97,17 @@ export class ODataVirtualDataSource extends VirtualDataSource {
 		if (typeCast<ODataVirtualDataSourceDataProvider>((<any>ODataVirtualDataSourceDataProvider).$type, this.actualDataProvider) !== null) {
 			(<ODataVirtualDataSourceDataProvider>this.actualDataProvider).enableJsonp = isEnabled;
 		}
+	}
+
+	public clone(): IDataSource {
+		let dataSource = new ODataVirtualDataSource();
+		super.cloneProperties(dataSource);
+		dataSource.baseUri = this.baseUri;
+		dataSource.entitySet = this.entitySet;
+		dataSource.timeoutMilliseconds = this.timeoutMilliseconds;
+		dataSource.isAggregationSupportedByServer = this.isAggregationSupportedByServer;
+		dataSource.enableJsonp = this.enableJsonp;
+		return dataSource;
 	}
 }
 
