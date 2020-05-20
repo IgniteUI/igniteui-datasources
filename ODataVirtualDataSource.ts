@@ -15,6 +15,7 @@ export class ODataVirtualDataSource extends VirtualDataSource {
 			$ret.isAggregationSupported = this.isGroupingSupported;
 			return $ret;
 		})());
+		this.externalDataSource = this;
 	}
 	private onBaseUriChanged(oldValue: string, newValue: string): void {
 		if (typeCast<ODataVirtualDataSourceDataProvider>((<any>ODataVirtualDataSourceDataProvider).$type, this.actualDataProvider) !== null) {
@@ -101,7 +102,38 @@ export class ODataVirtualDataSource extends VirtualDataSource {
 
 	public clone(): IDataSource {
 		let dataSource = new ODataVirtualDataSource();
-		super.cloneProperties(dataSource);
+		dataSource.executionContext = this.executionContext;
+		dataSource.includeSummaryRowsInSection = this.includeSummaryRowsInSection;
+		dataSource.isSectionCollapsable = this.isSectionCollapsable;
+		dataSource.isSectionExpandedDefault = this.isSectionExpandedDefault;
+		dataSource.isSectionHeaderNormalRow = this.isSectionHeaderNormalRow;
+		dataSource.isSectionSummaryRowsAtBottom = this.isSectionSummaryRowsAtBottom;
+		dataSource.isSectionContentVisible = this.isSectionContentVisible;
+		dataSource.primaryKey = this.primaryKey;
+		dataSource.propertiesRequested = this.propertiesRequested;
+		dataSource.sectionHeaderDisplayMode = this.sectionHeaderDisplayMode;
+		dataSource.shouldEmitSectionFooters = this.shouldEmitSectionFooters;
+		dataSource.shouldEmitSectionHeaders = this.shouldEmitSectionHeaders;
+		dataSource.shouldEmitShiftedRows = this.shouldEmitShiftedRows;
+		dataSource.summaryScope = this.summaryScope;
+		for (var i = 0; i < this.groupDescriptions.all.count; i++)
+		{
+			dataSource.groupDescriptions.add(this.groupDescriptions.all.item(i));
+		}
+		for (var i = 0; i < this.sortDescriptions.all.count; i++)
+		{
+			dataSource.sortDescriptions.add(this.sortDescriptions.all.item(i));
+		}
+		for (var i = 0; i < this.filterExpressions.all.count; i++)
+		{
+			dataSource.filterExpressions.add(this.filterExpressions.all.item(i));
+		}
+		for (var i = 0; i < this.summaryDescriptions.all.count; i++)
+		{
+			dataSource.summaryDescriptions.add(this.summaryDescriptions.all.item(i));
+		}
+		dataSource.pageSizeRequested = this.pageSizeRequested;
+        dataSource.maxCachedPages = this.maxCachedPages;
 		dataSource.baseUri = this.baseUri;
 		dataSource.entitySet = this.entitySet;
 		dataSource.timeoutMilliseconds = this.timeoutMilliseconds;
