@@ -5,7 +5,7 @@ import { BaseDataSource } from "igniteui-core/BaseDataSource";
 import { Base, typeCast, Type, markType } from "igniteui-core/type";
 import { IExternalDataSource } from 'igniteui-core/IExternalDataSource';
 
-export class ODataVirtualDataSource extends VirtualDataSource {
+export class ODataVirtualDataSource extends VirtualDataSource implements IExternalDataSource {
 	constructor() {
 		super();
 		this.dataProvider = ((() => {
@@ -116,21 +116,21 @@ export class ODataVirtualDataSource extends VirtualDataSource {
 		dataSource.shouldEmitSectionHeaders = this.shouldEmitSectionHeaders;
 		dataSource.shouldEmitShiftedRows = this.shouldEmitShiftedRows;
 		dataSource.summaryScope = this.summaryScope;
-		for (var i = 0; i < this.groupDescriptions.all.count; i++)
+		for (var i = 0; i < this.groupDescriptions.size(); i++)
 		{
-			dataSource.groupDescriptions.add(this.groupDescriptions.all.item(i));
+			dataSource.groupDescriptions.add(this.groupDescriptions.get(i));
 		}
-		for (var i = 0; i < this.sortDescriptions.all.count; i++)
+		for (var i = 0; i < this.sortDescriptions.size(); i++)
 		{
-			dataSource.sortDescriptions.add(this.sortDescriptions.all.item(i));
+			dataSource.sortDescriptions.add(this.sortDescriptions.get(i));
 		}
-		for (var i = 0; i < this.filterExpressions.all.count; i++)
+		for (var i = 0; i < this.filterExpressions.size(); i++)
 		{
-			dataSource.filterExpressions.add(this.filterExpressions.all.item(i));
+			dataSource.filterExpressions.add(this.filterExpressions.get(i));
 		}
-		for (var i = 0; i < this.summaryDescriptions.all.count; i++)
+		for (var i = 0; i < this.summaryDescriptions.size(); i++)
 		{
-			dataSource.summaryDescriptions.add(this.summaryDescriptions.all.item(i));
+			dataSource.summaryDescriptions.add(this.summaryDescriptions.get(i));
 		}
 		dataSource.pageSizeRequested = this.pageSizeRequested;
         dataSource.maxCachedPages = this.maxCachedPages;
