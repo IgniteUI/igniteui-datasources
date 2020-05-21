@@ -106,9 +106,9 @@ export class ODataVirtualDataSource extends VirtualDataSource implements IExtern
 		dataSource.includeSummaryRowsInSection = this.includeSummaryRowsInSection;
 		dataSource.isSectionCollapsable = this.isSectionCollapsable;
 		dataSource.isSectionExpandedDefault = this.isSectionExpandedDefault;
-		dataSource.isSectionHeaderNormalRow = this.isSectionHeaderNormalRow;
+		//dataSource.isSectionHeaderNormalRow = this.isSectionHeaderNormalRow;
 		dataSource.isSectionSummaryRowsAtBottom = this.isSectionSummaryRowsAtBottom;
-		dataSource.isSectionContentVisible = this.isSectionContentVisible;
+		//dataSource.isSectionContentVisible = this.isSectionContentVisible;
 		dataSource.primaryKey = this.primaryKey;
 		dataSource.propertiesRequested = this.propertiesRequested;
 		dataSource.sectionHeaderDisplayMode = this.sectionHeaderDisplayMode;
@@ -133,7 +133,7 @@ export class ODataVirtualDataSource extends VirtualDataSource implements IExtern
 			dataSource.summaryDescriptions.add(this.summaryDescriptions.get(i));
 		}
 		dataSource.pageSizeRequested = this.pageSizeRequested;
-        dataSource.maxCachedPages = this.maxCachedPages;
+        	dataSource.maxCachedPages = this.maxCachedPages;
 		dataSource.baseUri = this.baseUri;
 		dataSource.entitySet = this.entitySet;
 		dataSource.timeoutMilliseconds = this.timeoutMilliseconds;
