@@ -256,7 +256,7 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 			}
 		}
 
-		if (this._summaryScope === DataSourceSummaryScope.Both || this._summaryScope === DataSourceSummaryScope.Sections) {
+		if (this._summaryScope === DataSourceSummaryScope.Both || this._summaryScope === DataSourceSummaryScope.Groups) {
 			let summaryParameters = this.getSummaryQueryParameters(true);
 			if (!stringIsNullOrEmpty(summaryParameters)) {
 				summary = ", " + summaryParameters;
@@ -323,7 +323,7 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 		}
 
 		let summaryResults: ISummaryResult[] = null;
-		if (this._summaryScope == DataSourceSummaryScope.Both || this._summaryScope == DataSourceSummaryScope.Sections) {
+		if (this._summaryScope == DataSourceSummaryScope.Both || this._summaryScope == DataSourceSummaryScope.Groups) {
 			summaryResults = this.createSummaryResults(group);
 		}
 
@@ -340,7 +340,7 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 
 		if (this._summaryDescriptions == null ||
 			this._summaryDescriptions.size() == 0 ||
-			this._summaryScope == DataSourceSummaryScope.Sections ||
+			this._summaryScope == DataSourceSummaryScope.Groups ||
 			this._summaryScope == DataSourceSummaryScope.None) {
 			finishAction(null);
 			return;
