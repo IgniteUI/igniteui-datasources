@@ -215,6 +215,15 @@ export class ODataVirtualDataSourceDataProvider extends Base implements IDataSou
 			return null;
 		}
 	}
+	setItemValue(item: any, valueName: string, value: any) {
+		// does nothing for virtual data.
+	}
+	removeItem(item: any) {
+		// does nothing for virtual data.
+	}
+	addItem(item: any) {
+		// does nothing for virtual data.
+	}
 	schemaChanged: (sender: any, args: DataSourceDataProviderSchemaChangedEventArgs) => void = null;
 	private _currentFullCount: number = 0;
 	private _currentSchema: IDataSourceSchema = null;
