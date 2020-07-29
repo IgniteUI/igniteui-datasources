@@ -618,6 +618,111 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 		t.isCompleted = true;
 		t.hasErrors = true;
 	}
+	createBatchRequest(changes: any[]) {
+		// The changes array is an array of TransactionState objects. It's not explicitly defined as such
+		// so that the 19.2 build will still compile. TransactionState has the following signature:
+		//     - id 	 : primary key of the item (for DELETE and UPDATE)
+		//     - type	 : the type of transaction (ADD=0, UPDATE=1, DELETE=2)
+		//     - value	 : object containing the changes for ADD and UPDATE
+		//     - version : version data for this row. (etag data)
+
+		const requests = [];
+
+		for (let i = 0; i < changes.length; i++) {
+			let c = changes[i];
+			const headers = { "Content-Type": "application/json", "odata-version": "4.0" };
+			if (c.type === 0) {
+				requests.push({
+					method: "POST",
+					id: `r${i}`,
+					atomicityGroup: "g1",
+					url: `${this._baseUri}/${this._entitySet}`,
+					headers: headers,
+					body: c.value,
+				});
+			} else if (c.type === 1) {
+				if (c.version) {
+					headers["If-Match"] = c.version;
+				}
+				// we only give you the item properties that were updated, not the whole
+				// item so a PATCH request is appropriate here.
+				requests.push({
+					method: "PATCH",
+					id: `r${i}`,
+					atomicityGroup: "g1",
+					url: `${this._baseUri}/${this.getRequestUriWithKey(c.id)}`,
+					headers: headers,
+					body: c.value,
+				});
+			} else if (c.type === 2) {
+				if (c.version) {
+					headers["If-Match"] = c.version;
+				}
+				requests.push({
+					method: "DELETE",
+					id: `r${i}`,
+					atomicityGroup: "g1",
+					url: `${this._baseUri}/${this.getRequestUriWithKey(c.id)}`,
+					headers: headers,
+				});
+			}
+		}
+
+		let request = {
+			requestUri: `${this._baseUri}/$batch`,
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ requests: requests })
+		};
+
+		let self = this;
+		odatajs.oData.request(request, function(data: any) {
+			if (data && data.responses) {
+				if (data.responses.length > 0) {
+					let success = true;
+					let messages: string[] = [];
+					for (let i = 0; i < data.responses.length; i++) {
+						if (data.responses[i].status !== 200 &&
+							data.responses[i].status !== 204) {
+							success = false;
+
+							let failedRequest = requests.filter(r => r.id == data.responses[i].id)[0];
+							if (failedRequest) {
+								let msg = `${failedRequest.method} request failed with code ${data.responses[i].status}`;
+								messages.push(msg)
+								console.error(msg);
+							}
+							break;
+						}
+					}
+					if (success) {
+						self.batchCompleted(true, true, null);
+					} else {
+						self.batchCompleted(false, true, messages);
+					}
+				} else {
+					self.batchCompleted(false, true, null);
+				}
+			}
+		}, function (error: any) {
+			const messages: string[] = []
+			if (error && error.message) {
+				messages.push(error.message);
+			}
+			self.batchCompleted(false, true, messages);
+		});
+	}
+	private getRequestUriWithKey(key: any): string {
+		let result = "";
+		const keys = Object.keys(key);
+		for (let i = 0; i < keys.length; i++) {
+			if (i > 0) {
+				result += ",";
+			}
+			result += `${keys[i]}=${key[keys[i]]}`;
+		}
+		return `${this._entitySet}(${result})`;
+	}
 }
 
 

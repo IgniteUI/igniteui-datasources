@@ -16,6 +16,7 @@ export class ODataVirtualDataSource extends VirtualDataSource implements IExtern
 			return $ret;
 		})());
 		this.externalDataSource = this;
+		this.isReadOnly = true;
 	}
 	private onBaseUriChanged(oldValue: string, newValue: string): void {
 		if (typeCast<ODataVirtualDataSourceDataProvider>((<any>ODataVirtualDataSourceDataProvider).$type, this.actualDataProvider) !== null) {

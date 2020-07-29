@@ -91,6 +91,7 @@ export class ODataVirtualDataSourceDataProvider extends Base implements IDataSou
 			$ret.pageSizeRequested = this._pageSizeRequested;
 			$ret.timeoutMilliseconds = this._timeoutMilliseconds;
 			$ret.pageLoaded = this._callback;
+			$ret.batchCompleted = this._batchCompleted;
 			$ret.executionContext = this._executionContext;
 			$ret.sortDescriptions = this._sortDescriptions;
 			$ret.groupDescriptions = this._groupDescriptions;
@@ -437,6 +438,20 @@ export class ODataVirtualDataSourceDataProvider extends Base implements IDataSou
 			}
 		}
 		return DataSourceSchemaPropertyType.ObjectValue;
+	}
+
+	createBatchRequest(changes: any[]) {
+		if (this._worker) {
+			this._worker.createBatchRequest(changes);
+		}
+	}
+
+	private _batchCompleted: (success: boolean, requiresRefresh: boolean) => void = null;
+	get batchCompleted(): (success: boolean, requiresRefresh: boolean) => void {
+		return this._batchCompleted;
+	}
+	set batchCompleted(value: (success: boolean, requiresRefresh: boolean) => void) {
+		this._batchCompleted = value;
 	}
 }
 
