@@ -27,6 +27,8 @@ import { SummaryOperand } from 'igniteui-core/SummaryOperand';
 import { DataSourceSummaryScope } from 'igniteui-core/DataSourceSummaryScope';
 import { ISummaryResult } from 'igniteui-core/ISummaryResult';
 import { DefaultSummaryResult } from 'igniteui-core/DefaultSummaryResult';
+import { TransactionState } from 'igniteui-core/TransactionState';
+import { TransactionType } from 'igniteui-core/TransactionType';
 
 declare let odatajs: any;
 
@@ -618,6 +620,99 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 		t.isCompleted = true;
 		t.hasErrors = true;
 	}
+	createBatchRequest(changes: TransactionState[]) {
+		const requests = [];
+		for (let i = 0; i < changes.length; i++) {
+			let c = changes[i];
+			const headers = { "Content-Type": "application/json", "odata-version": "4.0" };
+			if (c.type === TransactionType.Add) {
+				requests.push({
+					method: "POST",
+					id: `r${i}`,
+					atomicityGroup: "g1",
+					url: `${this._baseUri}/${this._entitySet}`,
+					headers: headers,
+					body: c.value,
+				});
+			} else if (c.type === TransactionType.Update) {
+				if (c.version) {
+					headers["If-Match"] = c.version;
+				}
+				requests.push({
+					method: "PATCH",
+					id: `r${i}`,
+					atomicityGroup: "g1",
+					url: `${this._baseUri}/${this.getRequestUriWithKey(c.id)}`,
+					headers: headers,
+					body: c.value,
+				});
+			} else if (c.type === TransactionType.Delete) {
+				if (c.version) {
+					headers["If-Match"] = c.version;
+				}
+				requests.push({
+					method: "DELETE",
+					id: `r${i}`,
+					atomicityGroup: "g1",
+					url: `${this._baseUri}/${this.getRequestUriWithKey(c.id)}`,
+					headers: headers,
+				});
+			}
+		}
+
+		let request = {
+			requestUri: `${this._baseUri}/$batch`,
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ requests: requests })
+		};
+
+		let self = this;
+		odatajs.oData.request(request, function(data: any) {
+			if (data && data.responses) {
+				if (data.responses.length > 0) {
+					let success = true;
+					let messages: string[] = [];
+					for (let i = 0; i < data.responses.length; i++) {
+						if (data.responses[i].status !== 200 &&
+							data.responses[i].status !== 204) {
+							success = false;
+
+							let failedRequest = requests.filter(r => r.id == data.responses[i].id)[0];
+							if (failedRequest) {
+								let msg = `${failedRequest.method} request failed with code ${data.responses[i].status}`;
+								messages.push(msg)
+								console.error(msg);
+							}
+							break;
+						}
+					}
+					if (success) {
+						self.batchCompleted(true, true, null);
+					} else {
+						self.batchCompleted(false, true, messages);
+					}
+				} else {
+					self.batchCompleted(false, true, null);
+				}
+			}
+		}, function (error: any) {
+			const messages: string[] = []
+			if (error && error.message) {
+				messages.push(error.message);
+			}
+			self.batchCompleted(false, true, messages);
+		});
+	}
+	private getRequestUriWithKey(key: any): string {
+		let result = "";
+		const keys = Object.keys(key);
+		for (let i = 0; i < keys.length; i++) {
+			if (i > 0) {
+				result += ",";
+			}
+			result += `${keys[i]}=${key[keys[i]]}`;
+		}
+		return `${this._entitySet}(${result})`;
+	}
 }
-
-

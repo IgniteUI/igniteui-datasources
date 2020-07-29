@@ -21,6 +21,7 @@ import { DataSourceSchemaPropertyType } from "igniteui-core/DataSourceSchemaProp
 import { stringContains } from "igniteui-core/string";
 import { SummaryDescriptionCollection } from 'igniteui-core/SummaryDescriptionCollection';
 import { DataSourceSummaryScope } from 'igniteui-core/DataSourceSummaryScope';
+import { TransactionState } from 'igniteui-core/TransactionState';
 
 export class ODataVirtualDataSourceDataProvider extends Base implements IDataSourceVirtualDataProvider {
 	static $t: Type = markType(ODataVirtualDataSourceDataProvider, 'ODataVirtualDataSourceDataProvider', (<any>Base).$type, [IDataSourceVirtualDataProvider_$type]);
@@ -91,6 +92,7 @@ export class ODataVirtualDataSourceDataProvider extends Base implements IDataSou
 			$ret.pageSizeRequested = this._pageSizeRequested;
 			$ret.timeoutMilliseconds = this._timeoutMilliseconds;
 			$ret.pageLoaded = this._callback;
+			$ret.batchCompleted = this._batchCompleted;
 			$ret.executionContext = this._executionContext;
 			$ret.sortDescriptions = this._sortDescriptions;
 			$ret.groupDescriptions = this._groupDescriptions;
@@ -438,6 +440,18 @@ export class ODataVirtualDataSourceDataProvider extends Base implements IDataSou
 		}
 		return DataSourceSchemaPropertyType.ObjectValue;
 	}
+
+	createBatchRequest(changes: TransactionState[]) {
+		if (this._worker) {
+			this._worker.createBatchRequest(changes);
+		}
+	}
+
+	private _batchCompleted: (success: boolean, requiresRefresh: boolean) => void = null;
+	get batchCompleted(): (success: boolean, requiresRefresh: boolean) => void {
+		return this._batchCompleted;
+	}
+	set batchCompleted(value: (success: boolean, requiresRefresh: boolean) => void) {
+		this._batchCompleted = value;
+	}
 }
-
-
