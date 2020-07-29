@@ -21,6 +21,7 @@ import { DataSourceSchemaPropertyType } from "igniteui-core/DataSourceSchemaProp
 import { stringContains } from "igniteui-core/string";
 import { SummaryDescriptionCollection } from 'igniteui-core/SummaryDescriptionCollection';
 import { DataSourceSummaryScope } from 'igniteui-core/DataSourceSummaryScope';
+import { TransactionState } from 'igniteui-core/TransactionState';
 
 export class ODataVirtualDataSourceDataProvider extends Base implements IDataSourceVirtualDataProvider {
 	static $t: Type = markType(ODataVirtualDataSourceDataProvider, 'ODataVirtualDataSourceDataProvider', (<any>Base).$type, [IDataSourceVirtualDataProvider_$type]);
@@ -440,7 +441,7 @@ export class ODataVirtualDataSourceDataProvider extends Base implements IDataSou
 		return DataSourceSchemaPropertyType.ObjectValue;
 	}
 
-	createBatchRequest(changes: any[]) {
+	createBatchRequest(changes: TransactionState[]) {
 		if (this._worker) {
 			this._worker.createBatchRequest(changes);
 		}
@@ -454,5 +455,3 @@ export class ODataVirtualDataSourceDataProvider extends Base implements IDataSou
 		this._batchCompleted = value;
 	}
 }
-
-

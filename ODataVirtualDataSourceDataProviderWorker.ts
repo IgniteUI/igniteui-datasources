@@ -27,6 +27,8 @@ import { SummaryOperand } from 'igniteui-core/SummaryOperand';
 import { DataSourceSummaryScope } from 'igniteui-core/DataSourceSummaryScope';
 import { ISummaryResult } from 'igniteui-core/ISummaryResult';
 import { DefaultSummaryResult } from 'igniteui-core/DefaultSummaryResult';
+import { TransactionState } from 'igniteui-core/TransactionState';
+import { TransactionType } from 'igniteui-core/TransactionType';
 
 declare let odatajs: any;
 
@@ -618,20 +620,12 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 		t.isCompleted = true;
 		t.hasErrors = true;
 	}
-	createBatchRequest(changes: any[]) {
-		// The changes array is an array of TransactionState objects. It's not explicitly defined as such
-		// so that the 19.2 build will still compile. TransactionState has the following signature:
-		//     - id 	 : primary key of the item (for DELETE and UPDATE)
-		//     - type	 : the type of transaction (ADD=0, UPDATE=1, DELETE=2)
-		//     - value	 : object containing the changes for ADD and UPDATE
-		//     - version : version data for this row. (etag data)
-
+	createBatchRequest(changes: TransactionState[]) {
 		const requests = [];
-
 		for (let i = 0; i < changes.length; i++) {
 			let c = changes[i];
 			const headers = { "Content-Type": "application/json", "odata-version": "4.0" };
-			if (c.type === 0) {
+			if (c.type === TransactionType.Add) {
 				requests.push({
 					method: "POST",
 					id: `r${i}`,
@@ -640,12 +634,10 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 					headers: headers,
 					body: c.value,
 				});
-			} else if (c.type === 1) {
+			} else if (c.type === TransactionType.Update) {
 				if (c.version) {
 					headers["If-Match"] = c.version;
 				}
-				// we only give you the item properties that were updated, not the whole
-				// item so a PATCH request is appropriate here.
 				requests.push({
 					method: "PATCH",
 					id: `r${i}`,
@@ -654,7 +646,7 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 					headers: headers,
 					body: c.value,
 				});
-			} else if (c.type === 2) {
+			} else if (c.type === TransactionType.Delete) {
 				if (c.version) {
 					headers["If-Match"] = c.version;
 				}
@@ -724,5 +716,3 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 		return `${this._entitySet}(${result})`;
 	}
 }
-
-
