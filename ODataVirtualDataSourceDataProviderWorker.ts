@@ -625,7 +625,7 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 		for (let i = 0; i < changes.length; i++) {
 			let c = changes[i];
 			const headers = { "Content-Type": "application/json", "odata-version": "4.0" };
-			if (c.type === TransactionType.Add) {
+			if (c.transactionType === TransactionType.Add) {
 				requests.push({
 					method: "POST",
 					id: `r${i}`,
@@ -634,7 +634,7 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 					headers: headers,
 					body: c.value,
 				});
-			} else if (c.type === TransactionType.Update) {
+			} else if (c.transactionType === TransactionType.Update) {
 				if (c.version) {
 					headers["If-Match"] = c.version;
 				}
@@ -646,7 +646,7 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 					headers: headers,
 					body: c.value,
 				});
-			} else if (c.type === TransactionType.Delete) {
+			} else if (c.transactionType === TransactionType.Delete) {
 				if (c.version) {
 					headers["If-Match"] = c.version;
 				}
