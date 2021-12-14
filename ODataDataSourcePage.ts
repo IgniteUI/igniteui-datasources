@@ -51,6 +51,21 @@ export class ODataDataSourcePage implements IDataSourcePage {
 	}
 	getItemValueAtIndex(index: number, valueName: string): any {
 		let item = this._actualData[index];
+		// handle nested properties
+		if (valueName.includes('.')) {
+			var parts = valueName.split('.');
+			if (!item.has(parts[0])) {
+				return null;
+			}
+			let subItem = item.get(parts[0]);
+			for (let i = 1; i < parts.length; i++) {
+				if (subItem === undefined || subItem[parts[i]] === undefined) {
+					return null;
+				}
+				subItem = subItem[parts[i]];
+			}
+			return subItem;
+		}
 		if (!item.has(valueName)) {
 			return null;
 		}
