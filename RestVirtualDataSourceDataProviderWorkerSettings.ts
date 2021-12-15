@@ -1,9 +1,9 @@
-import { AsyncVirtualDataSourceDataProviderWorkerSettings } from "igniteui-react-core";
-import { SortDescriptionCollection } from "igniteui-react-core";
-import { FilterExpressionCollection } from "igniteui-react-core";
-import { Base, Type, markType } from "igniteui-react-core";
-import { SummaryDescriptionCollection } from 'igniteui-react-core';
-import { DataSourceSummaryScope } from 'igniteui-react-core';
+import { AsyncVirtualDataSourceDataProviderWorkerSettings } from "igniteui-core/AsyncVirtualDataSourceDataProviderWorkerSettings";
+import { SortDescriptionCollection } from "igniteui-core/SortDescriptionCollection";
+import { FilterExpressionCollection } from "igniteui-core/FilterExpressionCollection";
+import { Base, Type, markType } from "igniteui-core/type";
+import { SummaryDescriptionCollection } from 'igniteui-core/SummaryDescriptionCollection';
+import { DataSourceSummaryScope } from 'igniteui-core/DataSourceSummaryScope';
 
 export class RestVirtualDataSourceDataProviderWorkerSettings extends AsyncVirtualDataSourceDataProviderWorkerSettings {
 	static $t: Type = markType(RestVirtualDataSourceDataProviderWorkerSettings, 'RestVirtualDataSourceDataProviderWorkerSettings', (<any>AsyncVirtualDataSourceDataProviderWorkerSettings).$type);

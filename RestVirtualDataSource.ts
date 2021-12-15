@@ -1,9 +1,12 @@
-import { FilterExpressionCollection, SortDescriptionCollection, SummaryDescriptionCollection, VirtualDataSource } from "igniteui-react-core";
+import { FilterExpressionCollection } from "igniteui-core/FilterExpressionCollection";
+import { SortDescriptionCollection } from "igniteui-core/SortDescriptionCollection";
+import { SummaryDescriptionCollection } from "igniteui-core/SummaryDescriptionCollection";
+import { VirtualDataSource } from "igniteui-core/VirtualDataSource";
 import { RestVirtualDataSourceDataProvider } from "./RestVirtualDataSourceDataProvider";
-import { IDataSource } from "igniteui-react-core";
-import { BaseDataSource } from "igniteui-react-core";
-import { Base, typeCast, Type, markType } from "igniteui-react-core";
-import { IExternalDataSource } from 'igniteui-react-core';
+import { IDataSource } from "igniteui-core/IDataSource";
+import { BaseDataSource } from "igniteui-core/BaseDataSource";
+import { Base, typeCast, Type, markType } from "igniteui-core/type";
+import { IExternalDataSource } from 'igniteui-core/IExternalDataSource';
 
 export class RestVirtualDataSource extends VirtualDataSource implements IExternalDataSource {
 	constructor() {

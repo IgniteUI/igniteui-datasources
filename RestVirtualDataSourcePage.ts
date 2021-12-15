@@ -1,8 +1,8 @@
-import { IDataSourcePage, IDataSourcePage_$type } from "igniteui-react-core";
-import { IDataSourceSchema } from "igniteui-react-core";
-import { ISectionInformation } from "igniteui-react-core";
-import { ISummaryResult } from "igniteui-react-core";
-import { DataSourceSchemaPropertyType } from "igniteui-react-core"
+import { IDataSourcePage, IDataSourcePage_$type } from "igniteui-core/IDataSourcePage";
+import { IDataSourceSchema } from "igniteui-core/IDataSourceSchema";
+import { ISectionInformation } from "igniteui-core/ISectionInformation";
+import { ISummaryResult } from "igniteui-core/ISummaryResult";
+import { DataSourceSchemaPropertyType } from "igniteui-core/DataSourceSchemaPropertyType"
 
 export class RestVirtualDataSourcePage implements IDataSourcePage {
 	private _actualData: Map<string, any>[] = null;
