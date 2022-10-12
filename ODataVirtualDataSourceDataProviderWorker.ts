@@ -23,7 +23,7 @@ import { FilterExpressionVisitor } from "igniteui-core/FilterExpressionVisitor";
 import { ListSortDirection } from "igniteui-core/ListSortDirection";
 import { stringIsNullOrEmpty } from "igniteui-core/string";
 import { SummaryDescriptionCollection } from 'igniteui-core/SummaryDescriptionCollection';
-import { SummaryOperand } from 'igniteui-core/SummaryOperand';
+import { DataSourceSummaryOperand } from 'igniteui-core/DataSourceSummaryOperand';
 import { DataSourceSummaryScope } from 'igniteui-core/DataSourceSummaryScope';
 import { ISummaryResult } from 'igniteui-core/ISummaryResult';
 import { DefaultSummaryResult } from 'igniteui-core/DefaultSummaryResult';
@@ -398,7 +398,7 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 			let first = true;
 			let countExists = false;
 			for (let summary of this.iterSummaries(this._summaryDescriptions)) {
-				if (summary.operand == SummaryOperand.Count && (ignoreCount || countExists)) {
+				if (summary.operand == DataSourceSummaryOperand.Count && (ignoreCount || countExists)) {
 					continue;
 				}
 
@@ -407,19 +407,19 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 				}
 
 				switch (summary.operand) {
-					case SummaryOperand.Average:
+					case DataSourceSummaryOperand.Average:
 						result += summary.propertyName + " with average as " + summary.propertyName + "Average";
 						break;
-					case SummaryOperand.Min:
+					case DataSourceSummaryOperand.Min:
 						result += summary.propertyName + " with min as " + summary.propertyName + "Min";
 						break;
-					case SummaryOperand.Max:
+					case DataSourceSummaryOperand.Max:
 						result += summary.propertyName + " with max as " + summary.propertyName + "Max";
 						break;
-					case SummaryOperand.Sum:
+					case DataSourceSummaryOperand.Sum:
 						result += summary.propertyName + " with sum as " + summary.propertyName + "Sum";
 						break;
-					case SummaryOperand.Count:
+					case DataSourceSummaryOperand.Count:
 						result += "$count as $__count";
 						countExists = true;
 						break;
@@ -436,19 +436,19 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 		for (let summary of this.iterSummaries(this._summaryDescriptions)) {
 			let summaryName = summary.propertyName;
 			switch (summary.operand) {
-				case SummaryOperand.Average:
+				case DataSourceSummaryOperand.Average:
 					summaryName += "Average";
 					break;
-				case SummaryOperand.Min:
+				case DataSourceSummaryOperand.Min:
 					summaryName += "Min";
 					break;
-				case SummaryOperand.Max:
+				case DataSourceSummaryOperand.Max:
 					summaryName += "Max";
 					break;
-				case SummaryOperand.Sum:
+				case DataSourceSummaryOperand.Sum:
 					summaryName += "Sum";
 					break;
-				case SummaryOperand.Count:
+				case DataSourceSummaryOperand.Count:
 					summaryName = "$__count";
 					break;
 			}
