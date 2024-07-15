@@ -29,6 +29,7 @@ import { ISummaryResult } from 'igniteui-core/ISummaryResult';
 import { DefaultSummaryResult } from 'igniteui-core/DefaultSummaryResult';
 import { TransactionState } from 'igniteui-core/TransactionState';
 import { TransactionType } from 'igniteui-core/TransactionType';
+import { ODataDataSourceSchema } from "igniteui-core/ODataDataSourceSchema";
 
 declare let odatajs: any;
 
@@ -41,6 +42,7 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 	private _summaryDescriptions: SummaryDescriptionCollection = null;
 	private _summaryScope: DataSourceSummaryScope;	
 	private _desiredPropeties: string[] = null;
+	private _schemaIncludedProperties: string[] = null;
 	private _enableJsonp: boolean = true;
 	private _isAggregationSupported: boolean = false;
 	protected get sortDescriptions(): SortDescriptionCollection {
@@ -103,6 +105,7 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 		}
 		this._filterExpressions = settings.filterExpressions;
 		this._desiredPropeties = settings.propertiesRequested;
+		this._schemaIncludedProperties = settings.schemaIncludedProperties;
 		this._summaryDescriptions = settings.summaryDescriptions;
 		this._summaryScope = settings.summaryScope;
 		this._enableJsonp = settings.enableJsonp;
@@ -468,6 +471,25 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 		let success_: (arg1: string) => void = (res: string) => {
 			let sp: ODataSchemaProvider = new ODataSchemaProvider(res);
 			let schema = sp.getODataDataSourceSchema(this._entitySet);
+			if (this._schemaIncludedProperties != null) {
+				let propertyNames = [];
+				let propertyTypes = [];
+				for (let i = 0; i < schema.propertyNames.length; i++) {
+					let found = false;
+					for (let j = 0; j < this._schemaIncludedProperties.length; j++) {
+						if (this._schemaIncludedProperties[j] == schema.propertyNames[i]) {
+							found = true;
+							break;
+						}
+					}
+					if (!found) {
+						continue;
+					}
+					propertyNames.push(schema.propertyNames[i]);
+					propertyTypes.push(schema.propertyTypes[i]);
+				}
+				schema = new ODataDataSourceSchema(propertyNames, propertyTypes, schema.primaryKey);
+			}
 			finishAction(schema);
 		};
 		let failure_: () => void = () => failureAction();
