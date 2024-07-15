@@ -97,6 +97,7 @@ export class RestVirtualDataSourceDataProvider extends Base implements IDataSour
 			$ret.groupDescriptions = this._groupDescriptions;
 			$ret.filterExpressions = this._filterExpressions;
 			$ret.propertiesRequested = this._propertiesRequested;
+			$ret.schemaIncludedProperties = this._schemaIncludedProperties;
 			$ret.summaryDescriptions = this._summaryDescriptions;
 			$ret.summaryScope = this._summaryScope;
 			$ret.enableJsonp = this._enableJsonp;
@@ -297,6 +298,14 @@ export class RestVirtualDataSourceDataProvider extends Base implements IDataSour
 	}
 	set propertiesRequested(value: string[]) {
 		this._propertiesRequested = value;
+		this.queueAutoRefresh();
+	}
+	private _schemaIncludedProperties: string[] = null;
+	get schemaIncludedProperties(): string[] {
+		return this._schemaIncludedProperties;
+	}
+	set schemaIncludedProperties(value: string[]) {
+		this._schemaIncludedProperties = value;
 		this.queueAutoRefresh();
 	}
 	private _filterExpressions: FilterExpressionCollection = null;

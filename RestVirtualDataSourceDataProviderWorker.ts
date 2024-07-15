@@ -29,6 +29,7 @@ import { DefaultSummaryResult } from 'igniteui-core/DefaultSummaryResult';
 import { TransactionState } from 'igniteui-core/TransactionState';
 import { TransactionType } from 'igniteui-core/TransactionType';
 import { LocalDataSource } from 'igniteui-core/LocalDataSource';
+import { DefaultDataSourceSchema } from 'igniteui-core/DefaultDataSourceSchema';
 
 export class RestVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSourceProviderWorker {
 	private _baseUri: string = null;
@@ -39,6 +40,7 @@ export class RestVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSou
 	private _summaryDescriptions: SummaryDescriptionCollection = null;
 	private _summaryScope: DataSourceSummaryScope;	
 	private _desiredPropeties: string[] = null;
+	private _schemaIncludedProperties: string[] = null;
 	private _enableJsonp: boolean = true;
 	private _isAggregationSupported: boolean = false;
     private _provideFullCount: (page: any) => number = null;
@@ -122,6 +124,7 @@ export class RestVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSou
 		}
 		this._filterExpressions = settings.filterExpressions;
 		this._desiredPropeties = settings.propertiesRequested;
+		this._schemaIncludedProperties = settings.schemaIncludedProperties;
 		this._summaryDescriptions = settings.summaryDescriptions;
         this._fixedFullCount = settings.fixedFullCount;
 		this._summaryScope = settings.summaryScope;
@@ -625,6 +628,25 @@ export class RestVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSou
             
 			if (items && items.length > 0) {
                 let schema = this.resolveSchemaFromItems(items);
+				if (this._schemaIncludedProperties != null) {
+					let propertyNames: any[] = [];
+                	let propertyTypes: any[] = [];
+					for (let i = 0; i < schema.propertyNames.length; i++) {
+						let found = false;
+						for (let j = 0; j < this._schemaIncludedProperties.length; j++) {
+							if (this._schemaIncludedProperties[j] == schema.propertyNames[i]) {
+								found = true;
+								break;
+							}
+						}
+						if (!found) {
+							continue;
+						}
+						propertyNames.push(schema.propertyNames[i]);
+						propertyTypes.push(schema.propertyTypes[i]);
+					}
+					schema = new DefaultDataSourceSchema(propertyNames, propertyTypes, schema.primaryKey, schema.propertyDataIntents);
+				}
 			    finishAction(schema);
             } else {
                 failureAction("could not find items to resolve schema");
