@@ -42,7 +42,7 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 	private _summaryDescriptions: SummaryDescriptionCollection = null;
 	private _summaryScope: DataSourceSummaryScope;	
 	private _desiredPropeties: string[] = null;
-	private _schemaIncludedProperties: string[] = null;
+	private _schemaIncludedProperties: Set<string> = null;
 	private _enableJsonp: boolean = true;
 	private _isAggregationSupported: boolean = false;
 	protected get sortDescriptions(): SortDescriptionCollection {
@@ -105,7 +105,12 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 		}
 		this._filterExpressions = settings.filterExpressions;
 		this._desiredPropeties = settings.propertiesRequested;
-		this._schemaIncludedProperties = settings.schemaIncludedProperties;
+		if (settings.schemaIncludedProperties != null) {
+			this._schemaIncludedProperties = new Set<string>();
+			for (let i = 0; i < settings.schemaIncludedProperties.length; i++) {
+				this._schemaIncludedProperties.add(settings.schemaIncludedProperties[i]);
+			}
+		}
 		this._summaryDescriptions = settings.summaryDescriptions;
 		this._summaryScope = settings.summaryScope;
 		this._enableJsonp = settings.enableJsonp;
@@ -475,14 +480,7 @@ export class ODataVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSo
 				let propertyNames = [];
 				let propertyTypes = [];
 				for (let i = 0; i < schema.propertyNames.length; i++) {
-					let found = false;
-					for (let j = 0; j < this._schemaIncludedProperties.length; j++) {
-						if (this._schemaIncludedProperties[j] == schema.propertyNames[i]) {
-							found = true;
-							break;
-						}
-					}
-					if (!found) {
+					if (!this._schemaIncludedProperties.has(schema.propertyNames[i])) {
 						continue;
 					}
 					propertyNames.push(schema.propertyNames[i]);
