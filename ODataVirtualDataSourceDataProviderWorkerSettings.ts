@@ -42,6 +42,13 @@ export class ODataVirtualDataSourceDataProviderWorkerSettings extends AsyncVirtu
 	set propertiesRequested(value: string[]) {
 		this._propertiesRequested = value;
 	}
+	private _schemaIncludedProperties: string[] = null;
+	get schemaIncludedProperties(): string[] {
+		return this._schemaIncludedProperties;
+	}
+	set schemaIncludedProperties(value: string[]) {
+		this._schemaIncludedProperties = value;
+	}
 	private _groupDescriptions: SortDescriptionCollection = null;
 	get groupDescriptions(): SortDescriptionCollection {
 		return this._groupDescriptions;
