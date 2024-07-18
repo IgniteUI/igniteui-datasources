@@ -643,7 +643,7 @@ export class RestVirtualDataSourceDataProviderWorker extends AsyncVirtualDataSou
 						propertyNames.push(schema.propertyNames[i]);
 						propertyTypes.push(schema.propertyTypes[i]);
 					}
-					schema = new DefaultDataSourceSchema(propertyNames, propertyTypes, schema.primaryKey, schema.propertyDataIntents);
+					schema = new DefaultDataSourceSchema(propertyNames, propertyTypes, schema.primaryKey, schema.propertyDataIntents, schema.subSchemas);
 				}
 			    finishAction(schema);
             } else {
