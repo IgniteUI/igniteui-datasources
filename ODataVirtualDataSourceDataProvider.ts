@@ -285,6 +285,13 @@ export class ODataVirtualDataSourceDataProvider extends Base implements IDataSou
 	get sortDescriptions(): SortDescriptionCollection {
 		return this._sortDescriptions;
 	}
+	private _caseInsensitiveSortProperties: string[] = null;
+	get caseInsensitiveSortProperties(): string[] {
+		return this._caseInsensitiveSortProperties;
+	}
+	set caseInsensitiveSortProperties(a: string[]) {
+		this._caseInsensitiveSortProperties = a;
+	}
 	private _groupDescriptions: SortDescriptionCollection = null;
 	get groupDescriptions(): SortDescriptionCollection {
 		return this._groupDescriptions;
